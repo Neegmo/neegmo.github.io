@@ -100,7 +100,7 @@ export default class Game extends Phaser.Scene {
     this.debugText =  this.add.text(240, 50, 'Debug', style).setScrollFactor(0).setOrigin(0.5, 0)
 
     this.input.on("gameobjectdown", (pointer, gameObject) => {
-      this.PlayerJump();
+      // this.PlayerJump();
 
       this.canLerpPlayer = true;
       this.lerpTargetPosition = gameObject.x;
