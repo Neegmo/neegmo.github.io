@@ -1,5 +1,3 @@
-// import Carrot from '../game/Carrot.js'
-
 export default class Game extends Phaser.Scene {
   /** @type {Phaser.Physics.Arcade.StaticGroup} */
   goodPlatforms;
@@ -108,7 +106,7 @@ export default class Game extends Phaser.Scene {
       this.lerpTargetPosition = gameObject.x;
       this.lerpStartPosition = this.player.x;
 
-      this.debugText.text = gameObject.x
+      this.debugText.text = "Test"
 
     });
   } //create
