@@ -23,7 +23,8 @@ export default class Game extends Phaser.Scene {
   lerpTargetPosition;
   lerpStep;
 
-  debugText;
+  fundsText
+  fundsValue
 
   
 
@@ -50,8 +51,10 @@ export default class Game extends Phaser.Scene {
   } //preload
 
   create() {
-    
 
+
+    
+    
     this.add.image(240, 320, "background").setScrollFactor(1, 0);
 
     this.goodPlatforms = this.physics.add.staticGroup();
@@ -95,12 +98,6 @@ export default class Game extends Phaser.Scene {
 
     this.cameras.main.setDeadzone(this.scale.width * 1.5);
 
-    const style = { color: "#000", fontSize: 24 };
-    this.debugText = this.add
-      .text(240, 50, "Debug", style)
-      .setScrollFactor(0)
-      .setOrigin(0.5, 0);
-
     this.input.on("gameobjectdown", (pointer, gameObject) => {
 
       this.PlayerJump();
@@ -110,6 +107,13 @@ export default class Game extends Phaser.Scene {
       this.lerpTargetPosition = gameObject.x;
 
     });
+
+    const style = { color: "#000", fontSize: 24 };
+    this.fundsValue = 1000
+    this.fundsText = this.add
+      .text(240, 50, this.fundsValue, style)
+      .setScrollFactor(0)
+      .setOrigin(0.5, 0);
 
     // Phaser.Time.TimerEvent()
   } //create
@@ -363,6 +367,8 @@ export default class Game extends Phaser.Scene {
     ) {
       platform.setTexture("bad-platform");
 
+      this.fundsValue -= 20
+      this.fundsText.text = this.fundsValue
       this.canChangeBalance = false;
     }
 
@@ -374,6 +380,9 @@ export default class Game extends Phaser.Scene {
       player.y + player.height / 2 > platform.y - platform.height / 2
     ) {
       platform.setTexture("good-platform");
+
+      this.fundsValue += 20
+      this.fundsText.text = this.fundsValue
 
       this.canChangeBalance = false;
     }
