@@ -15,9 +15,6 @@ export default class Game extends Phaser.Scene {
 
   matrixValue;
 
-  timer;
-  timerValue = 0.2;
-
   spawningReferencePlatformHeight;
   spawnHeightOffset = 0;
 
@@ -26,14 +23,15 @@ export default class Game extends Phaser.Scene {
   lerpTargetPosition;
   lerpStep;
 
-  debugText
+  debugText;
+
+  
 
   constructor() {
     super("game");
   } //constructor
 
   init() {
-    this.timer = this.timerValue;
 
     this.lerpStep = 0;
   } //init
@@ -42,7 +40,6 @@ export default class Game extends Phaser.Scene {
     this.load.image("background", "assets/bg_layer1.png");
     this.load.image("platform", "assets/ground_wood.png");
     this.load.image("bunny-stand", "assets/bunny1_stand.png");
-    // this.load.image('carrot', 'assets/carrot.png')
     this.load.image("bunny-jump", "assets/bunny1_jump.png");
     this.load.image("bad-platform", "assets/ground_snow.png");
     this.load.image("good-platform", "assets/ground_grass.png");
@@ -53,6 +50,8 @@ export default class Game extends Phaser.Scene {
   } //preload
 
   create() {
+    
+
     this.add.image(240, 320, "background").setScrollFactor(1, 0);
 
     this.goodPlatforms = this.physics.add.staticGroup();
@@ -96,19 +95,23 @@ export default class Game extends Phaser.Scene {
 
     this.cameras.main.setDeadzone(this.scale.width * 1.5);
 
-    const style = { color: '#000', fontSize: 24 }
-    this.debugText =  this.add.text(240, 50, 'Debug', style).setScrollFactor(0).setOrigin(0.5, 0)
+    const style = { color: "#000", fontSize: 24 };
+    this.debugText = this.add
+      .text(240, 50, "Debug", style)
+      .setScrollFactor(0)
+      .setOrigin(0.5, 0);
 
     this.input.on("gameobjectdown", (pointer, gameObject) => {
-      // this.PlayerJump();
+
+      this.PlayerJump();
 
       this.canLerpPlayer = true;
+      this.lerpStartPosition = this.player.x
       this.lerpTargetPosition = gameObject.x;
-      this.lerpStartPosition = this.player.x;
-
-      this.debugText.text = "Test"
 
     });
+
+    // Phaser.Time.TimerEvent()
   } //create
 
   update() {
@@ -126,6 +129,28 @@ export default class Game extends Phaser.Scene {
   GetDeltaTime() {
     return this.game.loop.delta / 1000;
   }
+
+  countdown = async (seconds, callbackFunction) => {
+    while (seconds > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+      seconds--;
+      console.log(`Time left: ${seconds} seconds`);
+    }
+    callbackFunction();
+  };
+
+  // timer(){
+  //   timerObj = new this.timerEvent({
+  //     delay: 2000,
+  //     callback: () => {
+  //       console.log('Test')
+  //     },
+  //     callbackScope: this,
+  //     loop: true
+  //   })
+
+  //   timerObj.start()
+  // }
 
   movePlayer() {
     const touchingDown = this.player.body.touching.down;
@@ -331,6 +356,7 @@ export default class Game extends Phaser.Scene {
   } //InstantiateNewPlatformGroup
 
   HurtPlayer(player, platform) {
+
     if (
       this.canChangeBalance &&
       player.y + player.height / 2 > platform.y - platform.height / 2
@@ -339,6 +365,7 @@ export default class Game extends Phaser.Scene {
 
       this.canChangeBalance = false;
     }
+
   }
 
   RewardPlayer(player, platform) {
