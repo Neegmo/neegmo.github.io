@@ -1,20 +1,26 @@
-import Game from './scenes/Game.js'
+import Phaser from 'phaser';
 
-import GameOver from "./scenes/GameOver.js"
+import TitleScreen from "./scenes/TitleScreen";
+import Game from "./scenes/Game";
 
-export default new Phaser.Game({
+const config = {
+    width: 800,
+    height: 500,
     type: Phaser.AUTO,
-    width: 480,
-    height: 640,
-    scene: [Game, GameOver],
+    backgroundColor: '#616161',
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: {
-                y: 400
-            },
+            gravity: { y: 0 },
             debug: true
         }
+    }
+}
 
-        }
-})
+const game = new Phaser.Game(config)
+
+game.scene.add('titlescreen', TitleScreen)
+game.scene.add('game', Game)
+
+// game.scene.start('titlescreen')
+game.scene.start('game')

@@ -1,390 +1,92 @@
-export default class Game extends Phaser.Scene {
-  /** @type {Phaser.Physics.Arcade.StaticGroup} */
-  goodPlatforms;
+import Phaser from "phaser";
 
-  /** @type {Phaser.Physics.Arcade.StaticGroup} */
-  badPlatforms;
+export default class Game extends Phaser.Scene
+{
 
-  canChangeBalance = false;
+    init()
+    {
+        /**@type {Phaser.Math.Vector2} */
+        this.paddleRightVelocity = new Phaser.Math.Vector2(0, 0)
 
-  /** @type {Phaser.Physics.Arcade.Sprite} */
-  player;
+    } //init
 
-  /** @type {Phaser.Types.Input.Keyboard.CursorKeys} */
-  cursors;
 
-  matrixValue;
+    preload()
+    {
+        
+    } //preload
 
-  spawningReferencePlatformHeight;
-  spawnHeightOffset = 0;
+    create()
+    {
 
-  canLerpPlayer = false;
-  lerpStartPosition;
-  lerpTargetPosition;
-  lerpStep;
 
-  fundsText
-  fundsValue
+        this.ball = this.add.circle(400, 250, 10, 0xffffff, 1)
+        this.physics.add.existing(this.ball)
+        this.ball.body.setBounce(1, 1)
 
-  
+        this.ball.body.setCollideWorldBounds(true, 1, 1)
 
-  constructor() {
-    super("game");
-  } //constructor
+        this.ball.body.setVelocity(Phaser.Math.Between(-200, 200), Phaser.Math.Between(-200, 200))
 
-  init() {
+        this.paddleLeft = this.add.rectangle(50, 250, 30, 100, 0xffffff, 1)
+        this.physics.add.existing(this.paddleLeft, true)
 
-    this.lerpStep = 0;
-  } //init
+        this.paddleRight = this.add.rectangle(750, 250, 30, 100, 0xffffff, 1)
+        this.physics.add.existing(this.paddleRight, true)
+        
+        this.physics.add.collider(this.paddleLeft, this.ball)
+        this.physics.add.collider(this.paddleRight, this.ball)
 
-  preload() {
-    this.load.image("background", "assets/bg_layer1.png");
-    this.load.image("platform", "assets/ground_wood.png");
-    this.load.image("bunny-stand", "assets/bunny1_stand.png");
-    this.load.image("bunny-jump", "assets/bunny1_jump.png");
-    this.load.image("bad-platform", "assets/ground_snow.png");
-    this.load.image("good-platform", "assets/ground_grass.png");
+        this.cursors = this.input.keyboard.createCursorKeys()
 
-    this.load.audio("jump", "assets/sfx/phaseJump1.ogg");
+    } //create
 
-    this.cursors = this.input.keyboard.createCursorKeys();
-  } //preload
+    update()
+    {
 
-  create() {
+        /** @type {Phaser.Physics.Arcade.StaticBody} */
+        const body = this.paddleLeft.body
 
-
-    
-    
-    this.add.image(240, 320, "background").setScrollFactor(1, 0);
-
-    this.goodPlatforms = this.physics.add.staticGroup();
-
-    this.badPlatforms = this.physics.add.staticGroup();
-
-    const startPlatform = this.physics.add
-      .staticSprite(235, 580, "platform")
-      .setScale(0.3);
-    startPlatform.body.updateFromGameObject();
-
-    this.CreatePlatformMatrix();
-
-    this.player = this.physics.add
-      .sprite(240, 500, "bunny-stand")
-      .setScale(0.5);
-
-    this.physics.add.collider(startPlatform, this.player);
-
-    this.physics.add.collider(
-      this.goodPlatforms,
-      this.player,
-      this.RewardPlayer,
-      undefined,
-      this
-    );
-
-    this.physics.add.collider(
-      this.badPlatforms,
-      this.player,
-      this.HurtPlayer,
-      undefined,
-      this
-    );
-
-    this.player.body.checkCollision.up = false;
-    this.player.body.checkCollision.left = false;
-    this.player.body.checkCollision.right = false;
-
-    this.cameras.main.startFollow(this.player);
-
-    this.cameras.main.setDeadzone(this.scale.width * 1.5);
-
-    this.input.on("gameobjectdown", (pointer, gameObject) => {
-
-      this.PlayerJump();
-
-      this.canLerpPlayer = true;
-      this.lerpStartPosition = this.player.x
-      this.lerpTargetPosition = gameObject.x;
-
-    });
-
-    const style = { color: "#000", fontSize: 24 };
-    this.fundsValue = 1000
-    this.fundsText = this.add
-      .text(240, 50, this.fundsValue, style)
-      .setScrollFactor(0)
-      .setOrigin(0.5, 0);
-
-    // Phaser.Time.TimerEvent()
-  } //create
-
-  update() {
-    this.PlayerLerper();
-
-    this.CheckIfPlayerIsFalling();
-
-    this.movePlayer();
-
-    this.horizontalWrap(this.player);
-
-    this.InstantiateNewPlatformGroup();
-  } //update
-
-  GetDeltaTime() {
-    return this.game.loop.delta / 1000;
-  }
-
-  countdown = async (seconds, callbackFunction) => {
-    while (seconds > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-      seconds--;
-      console.log(`Time left: ${seconds} seconds`);
-    }
-    callbackFunction();
-  };
-
-  // timer(){
-  //   timerObj = new this.timerEvent({
-  //     delay: 2000,
-  //     callback: () => {
-  //       console.log('Test')
-  //     },
-  //     callbackScope: this,
-  //     loop: true
-  //   })
-
-  //   timerObj.start()
-  // }
-
-  movePlayer() {
-    const touchingDown = this.player.body.touching.down;
-
-    if (this.cursors.left.isDown && !touchingDown) {
-      this.player.setVelocityX(-200);
-    } else if (this.cursors.right.isDown && !touchingDown) {
-      this.player.setVelocityX(200);
-    } else {
-      this.player.setVelocityX(0);
-    }
-
-    if (this.cursors.up.isDown && touchingDown) {
-      this.PlayerJump();
-
-      // this.timer -= this.GetDeltaTime()
-      // if(this.timer <= 0){
-      // }
-    }
-
-    // if(this.cursors.up.isDown){
-    //     this.player.setVelocityY(-200)
-    // }
-    // else if (this.cursors.down.isDown){
-    //     this.player.setVelocityY(200)
-    // }
-    // else {
-    //     this.player.setVelocityY(0)
-    // }
-  } //movePlayer
-
-  PlayerLerper() {
-    if (this.canLerpPlayer) {
-      this.lerpStep += this.GetDeltaTime();
-
-      this.player.x = Phaser.Math.Linear(
-        this.lerpStartPosition,
-        this.lerpTargetPosition,
-        this.lerpStep
-      );
-
-      if (this.lerpStep >= 1) {
-        this.canLerpPlayer = false;
-        this.lerpStep = 0;
-      }
-    }
-  }
-
-  PlayerJump() {
-    this.player.setVelocityY(-400);
-
-    this.player.setTexture("bunny-jump");
-
-    this.sound.play("jump");
-
-    this.timer = this.timerValue;
-  } //PlayerJump
-
-  CheckIfPlayerIsFalling() {
-    const vy = this.player.body.velocity.y;
-    if (vy > 0) {
-      this.canChangeBalance = true;
-
-      if (this.player.texture.key !== "buny-stand")
-        this.player.setTexture("bunny-stand");
-    }
-  }
-
-  /**
-   * @param {Phaser.GameObjects.Sprite} sprite
-   */
-  horizontalWrap(sprite) {
-    const halfWidth = sprite.displayWidth * 0.5;
-    const gameWidth = this.scale.width;
-    if (sprite.x < -halfWidth) {
-      sprite.x = gameWidth + halfWidth;
-    } else if (sprite.x > gameWidth + halfWidth) {
-      sprite.x = -halfWidth;
-    }
-  } // horizontalWrap
-
-  CreateMatrixValue() {
-    this.matrixValue = [
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-      [
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-        Phaser.Math.Between(0, 2),
-      ],
-    ];
-  } //CreateMatrixValue
-
-  CreatePlatformMatrix() {
-    this.CreateMatrixValue();
-
-    for (let i = 0; i < 10; ++i) {
-      const y = 400 - 180 * i + this.spawnHeightOffset;
-
-      if (
-        this.matrixValue[i][0] === 0 &&
-        this.matrixValue[i][1] === 0 &&
-        this.matrixValue[i][2] === 0
-      ) {
-        /**@type {Phaser.Physics.Arcade.Sprite} */
-        const platform = this.badPlatforms.create(235, y, "platform");
-        platform.scale = 0.35;
-
-        /**@type {Phaser.Physics.Arcade.StaticBody} */
-        const body = platform.body;
-        body.updateFromGameObject();
-
-        platform.setInteractive();
-
-        continue;
-      }
-
-      for (let j = 0; j < 3; ++j) {
-        const x = 75 + 160 * j;
-        if (this.matrixValue[i][j] === 1) {
-          /**@type {Phaser.Physics.Arcade.Sprite} */
-          const platform = this.goodPlatforms.create(x, y, "platform");
-          platform.scale = 0.35;
-
-          /**@type {Phaser.Physics.Arcade.StaticBody} */
-          const body = platform.body;
-          body.updateFromGameObject();
-
-          platform.setInteractive();
-        } else if (this.matrixValue[i][j] === 2) {
-          const x = 75 + 160 * j;
-
-          /**@type {Phaser.Physics.Arcade.Sprite} */
-          const platform = this.badPlatforms.create(x, y, "platform");
-          platform.scale = 0.35;
-
-          /**@type {Phaser.Physics.Arcade.StaticBody} */
-          const body = platform.body;
-          body.updateFromGameObject();
-
-          platform.setInteractive();
+        if (this.cursors.up.isDown)
+        {
+            this.paddleLeft.y -= 10
+            body.updateFromGameObject()
         }
-      }
-    }
+        else if (this.cursors.down.isDown)
+        {
+            this.paddleLeft.y += 10
+            body.updateFromGameObject()
 
-    // this.add.text(this.scale.width * 0.5, y, i, {
-    //     fontSize: 24,
-    //     color: '#000'
-    // }).setOrigin(0.5)
+        }
 
-    this.spawningReferencePlatformHeight =
-      400 - 180 * 5 + this.spawnHeightOffset;
-    this.spawnHeightOffset -= 1800;
-  } //CreatePlatformMatrix
+        const diff = this.ball.y - this.paddleRight.y
 
-  InstantiateNewPlatformGroup() {
-    if (this.player.y < this.spawningReferencePlatformHeight) {
-      this.CreatePlatformMatrix();
-    }
-  } //InstantiateNewPlatformGroup
+        if (Math.abs(diff) < 10)
+        {
+            return
+        }
 
-  HurtPlayer(player, platform) {
+         const aiSpeed = 3
 
-    if (
-      this.canChangeBalance &&
-      player.y + player.height / 2 > platform.y - platform.height / 2
-    ) {
-      platform.setTexture("bad-platform");
+        if (diff < 0)
+        {
+            this.paddleRightVelocity.y = -aiSpeed
+            if(this.paddleRightVelocity.y < -10)
+            {
+                this.paddleRightVelocity.y = -10
+            }
+        }
+        else if ( diff > 0 ) 
+        {
+            this.paddleRightVelocity.y = aiSpeed
 
-      this.fundsValue -= 20
-      this.fundsText.text = this.fundsValue
-      this.canChangeBalance = false;
-    }
-
-  }
-
-  RewardPlayer(player, platform) {
-    if (
-      this.canChangeBalance &&
-      player.y + player.height / 2 > platform.y - platform.height / 2
-    ) {
-      platform.setTexture("good-platform");
-
-      this.fundsValue += 20
-      this.fundsText.text = this.fundsValue
-
-      this.canChangeBalance = false;
-    }
-  }
+            if(this.paddleRightVelocity.y > 10)
+            {
+                this.paddleRightVelocity.y = 10
+            }
+        }
+        
+        this.paddleRight.y += this.paddleRightVelocity.y
+        this.paddleRight.body.updateFromGameObject()
+    } //update
 }
